@@ -11,6 +11,8 @@ def home():
     <p>This application is running on Microsoft Azure App Service.</p>
 
     <p>Environment: Development</p>
+
+    <p>Deployed automatically using GitHub Actions CI/CD.</p>
     """
 
 if __name__ == "__main__":
