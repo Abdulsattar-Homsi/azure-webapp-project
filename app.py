@@ -2,6 +2,23 @@ from flask import Flask, request, redirect, url_for
 import struct
 import pyodbc
 from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+from werkzeug.utils import secure_filename
+
+STORAGE_ACCOUNT_NAME = "stwebappdev4728"
+CONTAINER_NAME = "taskfiles"
+
+def get_blob_service_client():
+    credential = DefaultAzureCredential()
+
+    account_url = (
+        f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net"
+    )
+
+    return BlobServiceClient(
+        account_url=account_url,
+        credential=credential
+    )
 
 app = Flask(__name__)
 
@@ -87,6 +104,22 @@ def home():
     </form>
 
     <hr>
+       
+       <h2>Upload File</h2>
+
+       <form method="POST"
+      	    action="/upload"
+      	    enctype="multipart/form-data">
+
+    	<input type="file" name="file" required>
+
+    	<button type="submit">
+        	Upload
+    	</button>
+
+       </form>
+
+       <hr>
 
     <h2>Cloud Tasks</h2>
 
@@ -228,6 +261,31 @@ def delete_task(task_id):
 
     cursor.close()
     conn.close()
+
+    return redirect(url_for("home"))
+
+
+@app.route("/upload", methods=["POST"])
+def upload_file():
+
+    file = request.files["file"]
+
+    if file.filename == "":
+        return redirect(url_for("home"))
+
+    filename = secure_filename(file.filename)
+
+    blob_service_client = get_blob_service_client()
+
+    blob_client = blob_service_client.get_blob_client(
+        container=CONTAINER_NAME,
+        blob=filename
+    )
+
+    blob_client.upload_blob(
+        file,
+        overwrite=True
+    )
 
     return redirect(url_for("home"))
 
