@@ -13,8 +13,7 @@ monitoring, security, and cost-aware architecture.
 \## Architecture Overview
 
 
-
-!\[Azure Cloud Web Application Architecture](docs/images/azure-architecture-overview.png)
+![Azure Cloud Web Application Architecture](./docs/images/azure-architecture-overview.png)
 
 
 
