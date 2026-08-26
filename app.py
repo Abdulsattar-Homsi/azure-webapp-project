@@ -64,6 +64,7 @@ def home():
     <body>
 
     <h1>Azure Cloud Portfolio</h1>
+    <h2>Cloud Tasks App By Abdulsattar Homsi</h2>	
 
     <h2>Add Cloud Task</h2>
 
@@ -87,7 +88,7 @@ def home():
 
     <hr>
 
-    <h2>Cloud Tasks App By Abdulsattar Homsi</h2>
+    <h2>Cloud Tasks</h2>
 
     <table border="1" cellpadding="8">
 
