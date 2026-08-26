@@ -3,6 +3,7 @@ import struct
 import pyodbc
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from azure.core.exceptions import ResourceNotFoundError
 from werkzeug.utils import secure_filename
 from flask import send_file
 import io
@@ -344,13 +345,18 @@ def download_file(task_id):
         blob=task.FileName
     )
 
-    blob_data = blob_client.download_blob().readall()
+    try:
+        blob_data = blob_client.download_blob().readall()
+
+    except ResourceNotFoundError:
+        return "The attachment no longer exists in Blob Storage.", 404
 
     return send_file(
         io.BytesIO(blob_data),
         as_attachment=True,
         download_name=task.FileName
     )
+
 
 
 if __name__ == "__main__":
