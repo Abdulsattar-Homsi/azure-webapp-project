@@ -62,7 +62,7 @@ def home():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT Id, Title, Description, Status, CreatedAt
+	SELECT Id, Title, Description, Status, CreatedAt, FileName
         FROM CloudTasks
         ORDER BY Id DESC
     """)
@@ -85,7 +85,8 @@ def home():
 
     <h2>Add Cloud Task</h2>
 
-    <form method="POST" action="/add">
+    <form method="POST" action="/add"
+      	enctype="multipart/form-data">
 
         <label>Title:</label><br>
         <input type="text" name="title" required>
@@ -97,6 +98,11 @@ def home():
 
         <br><br>
 
+	<label>Attachment:</label><br>
+	<input type="file" name="file">
+
+	<br><br>
+
         <button type="submit">
             Add Task
         </button>
@@ -105,21 +111,7 @@ def home():
 
     <hr>
        
-       <h2>Upload File</h2>
 
-       <form method="POST"
-      	    action="/upload"
-      	    enctype="multipart/form-data">
-
-    	<input type="file" name="file" required>
-
-    	<button type="submit">
-        	Upload
-    	</button>
-
-       </form>
-
-       <hr>
 
     <h2>Cloud Tasks</h2>
 
@@ -132,6 +124,7 @@ def home():
             <th>Status</th>
             <th>Created</th>
             <th>Actions</th>
+	    <th>Attachment</th>
         </tr>
     """
 
@@ -149,6 +142,8 @@ def home():
             <td>{task.Status}</td>
 
             <td>{task.CreatedAt}</td>
+
+	    <td>{task.FileName or "No file"}</td>
 
             <td>
 
@@ -198,18 +193,38 @@ def add_task():
     title = request.form["title"]
     description = request.form["description"]
 
+    file = request.files.get("file")
+    filename = None
+
+    if file and file.filename:
+
+        filename = secure_filename(file.filename)
+
+        blob_service_client = get_blob_service_client()
+
+        blob_client = blob_service_client.get_blob_client(
+            container=CONTAINER_NAME,
+            blob=filename
+        )
+
+        blob_client.upload_blob(
+            file,
+            overwrite=True
+        )
+
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
         """
         INSERT INTO CloudTasks
-        (Title, Description, Status)
-        VALUES (?, ?, ?)
+        (Title, Description, Status, FileName)
+        VALUES (?, ?, ?, ?)
         """,
         title,
         description,
-        "Pending"
+        "Pending",
+        filename
     )
 
     conn.commit()
@@ -218,7 +233,6 @@ def add_task():
     conn.close()
 
     return redirect(url_for("home"))
-
 
 @app.route("/complete/<int:task_id>", methods=["POST"])
 def complete_task(task_id):
