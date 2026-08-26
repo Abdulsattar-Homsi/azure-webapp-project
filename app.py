@@ -4,6 +4,8 @@ import pyodbc
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from werkzeug.utils import secure_filename
+from flask import send_file
+import io
 
 STORAGE_ACCOUNT_NAME = "stwebappdev4728"
 CONTAINER_NAME = "taskfiles"
@@ -143,7 +145,15 @@ def home():
 
             <td>{task.CreatedAt}</td>
 
-	    <td>{task.FileName or "No file"}</td>
+	    
+	    <td>
+    		{
+        	     f'<a href="/download/{task.Id}">{task.FileName}</a>'
+        	     if task.FileName
+        	     else "No file"
+    		}
+
+	    </td>
 
             <td>
 
@@ -302,6 +312,45 @@ def upload_file():
     )
 
     return redirect(url_for("home"))
+
+
+@app.route("/download/<int:task_id>")
+def download_file(task_id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT FileName
+        FROM CloudTasks
+        WHERE Id = ?
+        """,
+        task_id
+    )
+
+    task = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if not task or not task.FileName:
+        return "File not found", 404
+
+    blob_service_client = get_blob_service_client()
+
+    blob_client = blob_service_client.get_blob_client(
+        container=CONTAINER_NAME,
+        blob=task.FileName
+    )
+
+    blob_data = blob_client.download_blob().readall()
+
+    return send_file(
+        io.BytesIO(blob_data),
+        as_attachment=True,
+        download_name=task.FileName
+    )
 
 
 if __name__ == "__main__":
